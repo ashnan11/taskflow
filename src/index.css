@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-slate-200 dark:border-slate-700;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-300 dark:bg-slate-600;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-500 to-violet-500 bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl dark:bg-slate-900/80;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800;
+  }
+}
+
+/* Waving Indian flag — subtle premium motion */
+.flag-wave-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  margin-left: 2px;
+  perspective: 120px;
+}
+
+.flag-pole {
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  z-index: 0;
+  width: 2px;
+  height: 130%;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+  transform: translateY(-50%);
+  box-shadow: 0 0 4px rgb(100 116 139 / 0.35);
+}
+
+.dark .flag-pole {
+  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+}
+
+.flag-wave {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  transform-origin: left center;
+  animation: flag-wave 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.12));
+}
+
+.dark .flag-wave {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.35));
+}
+
+.flag-wave-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: left center;
+  opacity: 0.6;
+}
+
+.flag-wave-layer-2 {
+  animation: flag-wave 2.8s ease-in-out infinite;
+  animation-delay: -0.35s;
+}
+
+@keyframes flag-wave {
+  0%,
+  100% {
+    transform: perspective(120px) rotateY(0deg) rotateZ(0deg) skewY(0deg);
+  }
+  25% {
+    transform: perspective(120px) rotateY(10deg) rotateZ(0.6deg) skewY(1.2deg);
+  }
+  50% {
+    transform: perspective(120px) rotateY(2deg) rotateZ(-0.4deg) skewY(-0.8deg);
+  }
+  75% {
+    transform: perspective(120px) rotateY(-8deg) rotateZ(0.5deg) skewY(0.6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flag-wave,
+  .flag-wave-layer-2 {
+    animation: none;
+  }
+}
