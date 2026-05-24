@@ -5,7 +5,6 @@ import type { ActiveReminder } from '../services/reminderService';
 import {
   createHistoryEntry,
   getDueReminders,
-  getNotificationPermission,
   requestNotificationPermission,
   snoozeReminder,
   triggerReminderAlerts,
@@ -16,7 +15,7 @@ export function useReminders() {
   const { state, openDetails, showToast, updateTask } = useApp();
   const [activePopup, setActivePopup] = useState<ActiveReminder | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>(
-    getNotificationPermission()
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
   const settingsRef = useRef<ReminderSettings>(extendedStorage.getReminderSettings());
   const voiceRef = useRef(extendedStorage.getVoiceSettings());

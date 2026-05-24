@@ -8,3 +8,11 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>
 );
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/push-worker.js')
+      .then(() => console.log('Push worker registered'))
+      .catch((error) => console.error('Push worker failed:', error));
+  });
+}

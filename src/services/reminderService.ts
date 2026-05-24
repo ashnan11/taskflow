@@ -2,7 +2,6 @@ import { parseISO, isBefore, addMinutes, format } from 'date-fns';
 import type { Task } from '../types';
 import type { ReminderHistoryEntry, ReminderSettings } from '../types/settings';
 import { speakReminder } from './voiceService';
-import { showTaskNotification } from './notificationService';
 import type { VoiceSettings } from '../types/settings';
 
 export interface ActiveReminder {
@@ -48,23 +47,29 @@ export function clearFiredForTask(taskId: string): void {
   });
 }
 
-export { getNotificationPermission, requestNotificationPermission } from './notificationService';
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (!('Notification' in window)) return 'denied';
+  if (Notification.permission === 'granted') return 'granted';
+  if (Notification.permission === 'denied') return 'denied';
+  return Notification.requestPermission();
+}
 
-export async function showBrowserNotification(
+export function showBrowserNotification(
   reminder: ActiveReminder,
-  onClick?: (taskId: string) => void,
-  onFallback?: () => void
-): Promise<boolean> {
-  return showTaskNotification({
-    taskId: reminder.taskId,
-    taskTitle: reminder.taskTitle,
-    dueAt: reminder.dueAt,
-    type: reminder.repeat === 'none' ? 'task-reminder' : 'recurring-task',
-    onFallback,
-  }).then((shown) => {
-    if (shown) onClick?.(reminder.taskId);
-    return shown;
+  onClick?: (taskId: string) => void
+): void {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const n = new Notification('TaskFlow Reminder', {
+    body: reminder.taskTitle,
+    icon: '/web-app-manifest-192x192.png',
+    tag: reminderKey(reminder.taskId, reminder.dueAt),
+    requireInteraction: true,
   });
+  n.onclick = () => {
+    window.focus();
+    onClick?.(reminder.taskId);
+    n.close();
+  };
 }
 
 export function snoozeReminder(
@@ -106,7 +111,7 @@ export function triggerReminderAlerts(
 ): void {
   markReminderFired(reminder.taskId, reminder.dueAt);
   if (settings.browserNotifications) {
-    void showBrowserNotification(reminder, callbacks.onClick, () => callbacks.onInApp(reminder));
+    showBrowserNotification(reminder, callbacks.onClick);
   }
   if (settings.inAppPopups) {
     callbacks.onInApp(reminder);
