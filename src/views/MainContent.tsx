@@ -16,7 +16,10 @@ import { WeeklyChart } from '../components/productivity/WeeklyChart';
 import { TaskList } from '../components/tasks/TaskList';
 import { EmptyState } from '../components/ui/EmptyState';
 import { CalendarView } from '../components/calendar/CalendarView';
-import { SettingsPanel } from '../components/settings/SettingsPanel';
+import { SettingsCenter } from '../components/settings/SettingsCenter';
+import { AdvancedAnalytics } from '../components/analytics/AdvancedAnalytics';
+import { HabitsView } from '../components/habits/HabitsView';
+import { TaskTemplatesPanel } from '../components/tasks/TaskTemplates';
 import { QuickAdd } from '../components/tasks/QuickAdd';
 import { FocusMode } from '../components/productivity/FocusMode';
 
@@ -31,6 +34,8 @@ const viewTitles: Record<string, string> = {
   project: 'Project',
   tags: 'Tags',
   settings: 'Settings',
+  analytics: 'Analytics',
+  habits: 'Habits',
 };
 
 export function MainContent() {
@@ -40,8 +45,24 @@ export function MainContent() {
 
   if (currentView === 'settings') {
     return (
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <SettingsPanel />
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" id="main-content">
+        <SettingsCenter />
+      </main>
+    );
+  }
+
+  if (currentView === 'analytics') {
+    return (
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" id="main-content">
+        <AdvancedAnalytics />
+      </main>
+    );
+  }
+
+  if (currentView === 'habits') {
+    return (
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" id="main-content">
+        <HabitsView />
       </main>
     );
   }
@@ -82,6 +103,7 @@ export function MainContent() {
             </div>
             <div className="space-y-6">
               <WeeklyChart />
+              <TaskTemplatesPanel />
               {suggestions.length > 0 && (
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="mb-3 font-semibold">Smart Suggestions</h3>

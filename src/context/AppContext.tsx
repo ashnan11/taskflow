@@ -20,6 +20,8 @@ import type {
   UserPreferences,
 } from '../types';
 import { getInitialState, saveState } from '../utils/storage';
+import { createBackup, downloadBackup } from '../services/backupService';
+import { getAllExtendedForBackup } from '../utils/extendedStorage';
 import {
   createEmptyTask,
   duplicateTask,
@@ -170,6 +172,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  useEffect(() => {
+    const onImport = (e: Event) => {
+      const { app } = (e as CustomEvent<{ app: AppState }>).detail;
+      dispatch({ type: 'SET_STATE', payload: app });
+    };
+    const onSync = (e: Event) => {
+      const merged = (e as CustomEvent<AppState>).detail;
+      dispatch({ type: 'SET_STATE', payload: merged });
+    };
+    window.addEventListener('taskflow:import-state', onImport);
+    window.addEventListener('taskflow:sync-merge', onSync);
+    return () => {
+      window.removeEventListener('taskflow:import-state', onImport);
+      window.removeEventListener('taskflow:sync-merge', onSync);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -396,14 +415,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.tasks, deleteTasks, showToast]);
 
   const exportData = useCallback(() => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `taskflow-export-${format(new Date(), 'yyyy-MM-dd')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Data exported');
+    const backup = createBackup({ app: state, ...getAllExtendedForBackup() });
+    downloadBackup(backup);
+    showToast('Full backup exported');
   }, [state, showToast]);
 
   const updatePreferences = useCallback((prefs: Partial<UserPreferences>) => {

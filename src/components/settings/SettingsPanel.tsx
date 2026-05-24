@@ -3,13 +3,13 @@ import type { AppView, Priority } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { ThemeToggle } from '../ui/ThemeToggle';
 
-export function SettingsPanel() {
+export function SettingsPanel({ embedded = false }: { embedded?: boolean }) {
   const { state, updatePreferences, exportData, clearCompleted, setPomodoroActive, openShortcuts } = useApp();
   const prefs = state.preferences;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h2 className="text-2xl font-bold">Settings</h2>
+    <div className={embedded ? 'space-y-6' : 'mx-auto max-w-2xl space-y-6'}>
+      {!embedded && <h2 className="text-2xl font-bold">Settings</h2>}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-4 font-semibold">Appearance</h3>

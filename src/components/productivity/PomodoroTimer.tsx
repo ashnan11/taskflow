@@ -34,7 +34,9 @@ export function PomodoroTimer() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-6 right-6 z-40 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="fixed inset-x-4 bottom-above-mobile-chrome z-50 mx-auto w-auto max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:mx-0 lg:w-72"
+        role="dialog"
+        aria-label="Pomodoro timer"
       >
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium">Pomodoro</span>

@@ -1,8 +1,12 @@
+interface WavingIndianFlagProps {
+  variant?: 'default' | 'premium';
+}
+
 /** Small stylized Indian flag with a smooth waving animation */
-export function WavingIndianFlag() {
+export function WavingIndianFlag({ variant = 'default' }: WavingIndianFlagProps) {
   return (
     <span
-      className="flag-wave-container inline-flex shrink-0 align-middle"
+      className={`flag-wave-container inline-flex shrink-0 align-middle ${variant === 'premium' ? 'flag-wave-container--premium' : ''}`}
       role="img"
       aria-label="India"
     >

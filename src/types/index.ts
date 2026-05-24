@@ -11,6 +11,8 @@ export type AppView =
   | 'calendar'
   | 'project'
   | 'tags'
+  | 'analytics'
+  | 'habits'
   | 'settings';
 
 export type SortOption =

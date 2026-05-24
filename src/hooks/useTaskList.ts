@@ -47,6 +47,8 @@ export function useTaskList(): Task[] {
       case 'calendar':
       case 'dashboard':
       case 'settings':
+      case 'analytics':
+      case 'habits':
       default:
         tasks = tasks.filter((t) => !t.isArchived);
         if (currentView === 'dashboard') {
