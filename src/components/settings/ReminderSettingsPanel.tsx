@@ -23,6 +23,8 @@ export function ReminderSettingsPanel() {
         <button
           type="button"
           onClick={async () => {
+            console.log('ENABLE BUTTON CLICKED');
+            
             const result = await requestPermission();
 
             if (
