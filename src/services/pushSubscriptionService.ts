@@ -56,6 +56,8 @@ export async function subscribeToPushNotifications(userId?: string): Promise<Pus
       }));
     console.log('Subscription created:', subscription);
     localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.toJSON()));
+    console.log('About to save subscription...', subscription);
+
     await saveSubscription(subscription, userId);
     return subscription;
   } catch (error) {
@@ -89,6 +91,8 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
     return;
   } catch (error) {
     console.warn('[TaskFlow] API subscription save failed. Trying Supabase fallback.', error);
+
+    console.error('FULL SAVE ERROR:', error);
   }
 
   const supabase = getSupabase();
