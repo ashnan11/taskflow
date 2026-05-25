@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { extendedStorage } from '../../utils/extendedStorage';
 import type { ReminderSettings } from '../../types/settings';
 import { useReminders } from '../../hooks/useReminders';
+import { subscribeToPushNotifications } from '../../services/pushSubscriptionService';
 export function ReminderSettingsPanel() {
   const { permission, requestPermission } = useReminders();
   const [settings, setSettings] = useState<ReminderSettings>(() => extendedStorage.getReminderSettings());
@@ -21,7 +22,16 @@ export function ReminderSettingsPanel() {
         <span className="text-sm">Browser permission: {permission}</span>
         <button
           type="button"
-          onClick={() => requestPermission()}
+          onClick={async () => {
+            const result = await requestPermission();
+
+            if (
+              result === 'granted' ||
+              Notification.permission === 'granted'
+            ) {
+              await subscribeToPushNotifications();
+            }
+          }}
           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs text-white hover:bg-brand-700"
         >
           <Bell className="h-3 w-3" /> Enable
