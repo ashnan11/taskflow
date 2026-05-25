@@ -46,6 +46,7 @@ export async function subscribeToPushNotifications(userId?: string): Promise<Pus
   if (!registration) return null;
 
   try {
+    console.log('Creating push subscription...');
     const existing = await registration.pushManager.getSubscription();
     const subscription =
       existing ??
@@ -53,7 +54,7 @@ export async function subscribeToPushNotifications(userId?: string): Promise<Pus
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       }));
-
+    console.log('Subscription created:', subscription);
     localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.toJSON()));
     await saveSubscription(subscription, userId);
     return subscription;
@@ -72,11 +73,19 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
   };
 
   try {
-    await fetch('/api/push-subscriptions', {
+    const response = await fetch('/api/push-subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+
+    const result = await response.json();
+    console.log('Push subscription save response:', result);
+
+    if (!response.ok) {
+      throw new Error(result?.error || 'Failed to save push subscription');
+    }
+
     return;
   } catch (error) {
     console.warn('[TaskFlow] API subscription save failed. Trying Supabase fallback.', error);
