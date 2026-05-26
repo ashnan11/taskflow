@@ -1,8 +1,13 @@
 {
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node"
+    }
+  },
   "crons": [
     {
       "path": "/api/process-reminders",
-      "schedule": "30 14 * * *"
+      "schedule": "30 16 * * *"
     }
   ]
 }
