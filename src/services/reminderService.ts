@@ -56,20 +56,20 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
 export function showBrowserNotification(
   reminder: ActiveReminder,
-  onClick?: (taskId: string) => void
 ): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const n = new Notification('TaskFlow Reminder', {
-    body: reminder.taskTitle,
-    icon: '/web-app-manifest-192x192.png',
-    tag: reminderKey(reminder.taskId, reminder.dueAt),
-    requireInteraction: true,
+  
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then((registration) => {
+    registration.showNotification('TaskFlow Reminder', {
+      body: reminder.taskTitle,
+      icon: '/web-app-manifest-192x192.png',
+      badge: '/web-app-manifest-192x192.png',
+      tag: reminderKey(reminder.taskId, reminder.dueAt),
+      requireInteraction: true,
+    });
   });
-  n.onclick = () => {
-    window.focus();
-    onClick?.(reminder.taskId);
-    n.close();
-  };
+}
 }
 
 export function snoozeReminder(
@@ -111,7 +111,7 @@ export function triggerReminderAlerts(
 ): void {
   markReminderFired(reminder.taskId, reminder.dueAt);
   if (settings.browserNotifications) {
-    showBrowserNotification(reminder, callbacks.onClick);
+    showBrowserNotification(reminder);
   }
   if (settings.inAppPopups) {
     callbacks.onInApp(reminder);
