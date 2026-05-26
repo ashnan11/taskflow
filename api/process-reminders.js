@@ -16,10 +16,10 @@ function parseTasks(row) {
 }
 
 export default async function handler(req, res) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
-    return json(res, 401, { error: 'Unauthorized' });
-  }
+  // const cronSecret = process.env.CRON_SECRET;
+  // if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
+  //   return json(res, 401, { error: 'Unauthorized' });
+  // }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
