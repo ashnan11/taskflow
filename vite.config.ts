@@ -32,6 +32,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['/push-worker.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
