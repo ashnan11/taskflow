@@ -52,9 +52,13 @@ export default async function handler(req, res) {
       const reminderTime = due.getTime();
       const currentTime = now.getTime();
 
-      const diff = Math.abs(currentTime - reminderTime);
+      const diffMinutes = (currentTime - reminderTime) / 1000 / 60;
 
-      return !Number.isNaN(reminderTime) && diff <= 300000;
+      return (
+        !Number.isNaN(reminderTime) &&
+        diffMinutes >= 0 &&
+        diffMinutes <= 10
+      );
     });
 
     if (!dueTasks.length) continue;
@@ -140,7 +144,8 @@ export default async function handler(req, res) {
             ? Math.abs(now.getTime() - new Date(task.reminder).getTime())
             : null,
           dueNow: task.reminder
-            ? Math.abs(now.getTime() - new Date(task.reminder).getTime()) <= 300000
+            ? ((now.getTime() - new Date(task.reminder).getTime()) /  1000 / 60) >= 0 &&
+              ((now.getTime() - new Date(task.reminder).getTime()) / 1000 / 60) <= 10
             : false,
         })),
       };
