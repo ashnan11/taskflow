@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     const dueTasks = tasks.filter((task) => {
       if (!task?.reminder || task.isCompleted || task.isArchived) return false;
 
-      const due = new Date(task.reminder);
+      const due = new Date(`${task.reminder}:00+05:30`);
 
       const reminderTime = due.getTime();
       const currentTime = now.getTime();
