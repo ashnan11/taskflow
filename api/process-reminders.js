@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
       const diff = Math.abs(currentTime - reminderTime);
 
-      return !Number.isNaN(reminderTime) && diff <= 60000;
+      return !Number.isNaN(reminderTime) && diff <= 300000;
     });
 
     if (!dueTasks.length) continue;
