@@ -48,12 +48,15 @@ export async function subscribeToPushNotifications(userId?: string): Promise<Pus
   try {
     console.log('Creating push subscription...');
     const existing = await registration.pushManager.getSubscription();
-    const subscription =
-      existing ??
-      (await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-      }));
+
+    if (existing) {
+      await existing.unsubscribe();
+    }
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
+    });
     console.log('Subscription created:', subscription);
     localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.toJSON()));
     console.log('About to save subscription...', subscription);
