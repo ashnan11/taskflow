@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     const { data: subscriptions } = await supabase
       .from('taskflow_push_subscriptions')
       .select('endpoint,subscription')
-      .eq('user_id', userId);
+      .or(`user_id.eq.${userId},user_id.is.null`);
 
     if (!subscriptions?.length) continue;
 
