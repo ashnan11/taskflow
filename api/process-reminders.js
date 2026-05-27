@@ -46,8 +46,15 @@ export default async function handler(req, res) {
     const tasks = parseTasks(row);
     const dueTasks = tasks.filter((task) => {
       if (!task?.reminder || task.isCompleted || task.isArchived) return false;
+
       const due = new Date(task.reminder);
-      return !Number.isNaN(due.getTime()) && due <= now;
+
+      const reminderTime = due.getTime();
+      const currentTime = now.getTime();
+
+      const diff = Math.abs(currentTime - reminderTime);
+
+      return !Number.isNaN(reminderTime) && diff <= 60000;
     });
 
     if (!dueTasks.length) continue;
