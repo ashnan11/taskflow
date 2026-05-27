@@ -108,5 +108,11 @@ export default async function handler(req, res) {
     }
   }
 
-  return json(res, 200, { ok: true, sent, skipped });
+  return json(res, 200, {
+  ok: true,
+  sent,
+  skipped,
+  usersFound: userRows?.length || 0,
+  checkedAt: now.toISOString(),
+});
 }
