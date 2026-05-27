@@ -64,7 +64,9 @@ export default async function handler(req, res) {
       .select('endpoint,subscription')
       .or(`user_id.eq.${userId},user_id.is.null`);
 
-    if (!subscriptions?.length) continue;
+    if (!subscriptions?.length) {
+      continue;
+    }
 
     for (const task of dueTasks) {
       const key = reminderKey(userId, task.id, task.reminder);
@@ -114,5 +116,35 @@ export default async function handler(req, res) {
   skipped,
   usersFound: userRows?.length || 0,
   checkedAt: now.toISOString(),
+  debugUsers: await Promise.all(
+    (userRows || []).map(async (row) => {
+      const userId = row.user_id;
+      const tasks = parseTasks(row);
+
+      const { data: subscriptions } = await supabase
+        .from('taskflow_push_subscriptions')
+        .select('endpoint,subscription')
+        .or(`user_id.eq.${userId},user_id.is.null`);
+
+      return {
+        userId,
+        taskCount: tasks.length,
+        subscriptionsFound: subscriptions?.length || 0,
+        reminders: tasks.map((task) => ({
+          title: task.title,
+          reminder: task.reminder,
+          isCompleted: task.isCompleted,
+          isArchived: task.isArchived,
+          parsedTime: task.reminder ? new Date(task.reminder).toISOString() : null,
+          diffMs: task.reminder
+            ? Math.abs(now.getTime() - new Date(task.reminder).getTime())
+            : null,
+          dueNow: task.reminder
+            ? Math.abs(now.getTime() - new Date(task.reminder).getTime()) <= 300000
+            : false,
+        })),
+      };
+    })
+  ),
 });
 }
