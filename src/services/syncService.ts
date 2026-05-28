@@ -34,23 +34,15 @@ export async function pushCloudState(userId: string, state: AppState): Promise<b
 }
 
 export function mergeStates(local: AppState, remote: AppState): AppState {
-  const taskMap = new Map<string, (typeof local.tasks)[0]>();
-  local.tasks.forEach((t) => taskMap.set(t.id, t));
-  remote.tasks.forEach((rt) => {
-    const existing = taskMap.get(rt.id);
-    if (!existing || new Date(rt.updatedAt) > new Date(existing.updatedAt)) {
-      taskMap.set(rt.id, rt);
-    }
-  });
   return {
     ...local,
-    tasks: Array.from(taskMap.values()).sort((a, b) => a.order - b.order),
-    categories: [...new Set([...local.categories, ...remote.categories])],
-    allTags: [...new Set([...local.allTags, ...remote.allTags])],
+    tasks: local.tasks,
+    categories: [...new Set([...remote.categories, ...local.categories])],
+    allTags: [...new Set([...remote.allTags, ...local.allTags])],
     preferences: { ...remote.preferences, ...local.preferences },
     completionStreak: Math.max(local.completionStreak, remote.completionStreak),
-    weeklyCompletions: remote.weeklyCompletions?.length === 7 ? remote.weeklyCompletions : local.weeklyCompletions,
-    lastActiveDate: remote.lastActiveDate ?? local.lastActiveDate,
+    weeklyCompletions: local.weeklyCompletions?.length === 7 ? local.weeklyCompletions : remote.weeklyCompletions,
+    lastActiveDate: local.lastActiveDate ?? remote.lastActiveDate,
   };
 }
 
