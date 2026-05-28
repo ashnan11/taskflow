@@ -94,7 +94,7 @@ export function MainContent() {
               <QuickAdd />
               <section className="mt-6">
                 <h3 className="mb-4 text-lg font-semibold">Active Tasks</h3>
-                {tasks.length === 0 ? (
+                {tasks.filter((t) => !t.isCompleted).length === 0 ? (
                   <EmptyState {...emptyConfig} onAction={openAddTask} />
                 ) : (
                   <TaskList tasks={tasks.filter((t) => !t.isCompleted)} />
