@@ -56,7 +56,7 @@ export default async function handler(req, res) {
 
       return (
         !Number.isNaN(reminderTime) &&
-        diffMinutes >= 0 &&
+        diffMinutes >= -1 &&
         diffMinutes <= 10
       );
     });
