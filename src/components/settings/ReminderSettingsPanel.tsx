@@ -31,7 +31,14 @@ export function ReminderSettingsPanel() {
               result === 'granted' ||
               Notification.permission === 'granted'
             ) {
-              await subscribeToPushNotifications();
+              let guestId = localStorage.getItem('taskflow-guest-cloud-id');
+
+              if (!guestId) {
+                guestId = crypto.randomUUID();
+                localStorage.setItem('taskflow-guest-cloud-id', guestId);
+              }
+
+              await subscribeToPushNotifications(guestId);
             }
           }}
           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs text-white hover:bg-brand-700"
