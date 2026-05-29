@@ -73,6 +73,15 @@ export function useCloudSync() {
 
     return () => unsub?.();
   }, [isCloudAvailable, getCloudUserId]);
+ useEffect(() => {
+  if (!isCloudAvailable || syncingRef.current) return;
+
+  const id = setTimeout(() => {
+    syncNow();
+  }, 800);
+
+  return () => clearTimeout(id);
+}, [state.tasks, state.categories, state.allTags, state.preferences, isCloudAvailable, syncNow]);
 
   return { syncNow, isSyncing: syncingRef.current };
 }
