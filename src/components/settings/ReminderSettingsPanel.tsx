@@ -31,6 +31,7 @@ export function ReminderSettingsPanel() {
               result === 'granted' ||
               Notification.permission === 'granted'
             ) {
+
               let guestId = localStorage.getItem('taskflow-guest-cloud-id');
 
               if (!guestId) {
