@@ -260,6 +260,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (partial.category) dispatch({ type: 'ADD_CATEGORY', payload: partial.category });
       partial.tags?.forEach((tag) => dispatch({ type: 'ADD_TAG', payload: tag }));
       showToast('Task created successfully');
+      setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
       return task;
     },
     [state.preferences.defaultPriority, showToast]
@@ -272,6 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         payload: { ...task, updatedAt: new Date().toISOString() },
       });
       showToast('Task updated');
+      setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
     },
     [showToast]
   );
@@ -289,6 +291,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       }
       showToast(`${ids.length} task(s) deleted`, 'info');
+      setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
     },
     [state.tasks, clearSelection, showToast]
   );

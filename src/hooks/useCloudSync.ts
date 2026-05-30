@@ -52,18 +52,6 @@ export function useCloudSync() {
   useEffect(() => {
     if (!isCloudAvailable) return;
 
-    const settings = extendedStorage.getSyncSettings();
-    if (!settings.autoSync) return;
-
-    syncNow();
-    const id = setInterval(syncNow, settings.syncIntervalMs);
-
-    return () => clearInterval(id);
-  }, [isCloudAvailable, syncNow]);
-
-  useEffect(() => {
-    if (!isCloudAvailable) return;
-
     const cloudUserId = getCloudUserId();
 
     const unsub = subscribeToCloudChanges(cloudUserId, (remote) => {
@@ -73,15 +61,29 @@ export function useCloudSync() {
 
     return () => unsub?.();
   }, [isCloudAvailable, getCloudUserId]);
- useEffect(() => {
-  if (!isCloudAvailable || syncingRef.current) return;
+  useEffect(() => {
+    const handleManualSync = () => {
+      setTimeout(() => {
+        const saved = localStorage.getItem('taskflow-app-state');
 
-  const id = setTimeout(() => {
-    syncNow();
-  }, 800);
+        if (saved) {
+          try {
+            stateRef.current = JSON.parse(saved);
+          } catch {
+            // ignore
+          }
+        }
 
-  return () => clearTimeout(id);
-}, [state.tasks, state.categories, state.allTags, state.preferences, isCloudAvailable, syncNow]);
+        syncNow();
+      }, 1000);
+    };
+
+    window.addEventListener('taskflow:manual-sync', handleManualSync);
+
+    return () => {
+      window.removeEventListener('taskflow:manual-sync', handleManualSync);
+    };
+  }, [syncNow]);
 
   return { syncNow, isSyncing: syncingRef.current };
 }
