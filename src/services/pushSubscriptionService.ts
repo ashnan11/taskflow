@@ -93,12 +93,14 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
 
     const result = await response.json();
     console.log('Push subscription save response:', result);
+    alert(`Push save response: ${JSON.stringify(result)}`);
 
     if (!response.ok) {
       throw new Error(result?.error || 'Failed to save push subscription');
     }
   } catch (error) {
     console.warn('[TaskFlow] API subscription save failed. Trying Supabase fallback.', error);
+    alert(`Push save failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   const supabase = getSupabase();
