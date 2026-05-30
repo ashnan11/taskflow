@@ -30,13 +30,7 @@ export async function pushCloudState(userId: string, state: AppState): Promise<b
     updated_at: new Date().toISOString(),
   };
   const { error } = await supabase.from(SYNC_TABLE).upsert(payload, { onConflict: 'user_id' });
-
-  if (error) {
-    console.error('[TaskFlow] Cloud push failed:', error);
-    throw error;
-  }
-
-  return true;
+  return !error;
 }
 
 export function mergeStates(local: AppState, remote: AppState): AppState {
