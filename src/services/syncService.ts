@@ -53,7 +53,7 @@ export function subscribeToCloudChanges(
   const supabase = getSupabase();
   if (!supabase) return null;
   const channel = supabase
-    .channel(`taskflow-${userId}`)
+    .channel(`taskflow-${userId}-${Date.now()}`)
     .on(
       'postgres_changes',
       {
