@@ -81,18 +81,8 @@ export function useCloudSync() {
   useEffect(() => {
     const handleManualSync = () => {
       setTimeout(() => {
-        const saved = localStorage.getItem('taskflow-app-state');
-
-        if (saved) {
-          try {
-            stateRef.current = JSON.parse(saved);
-          } catch {
-            // ignore invalid local state
-          }
-        }
-
         syncNow();
-      }, 800);
+      }, 500);
     };
 
     window.addEventListener('taskflow:manual-sync', handleManualSync);
