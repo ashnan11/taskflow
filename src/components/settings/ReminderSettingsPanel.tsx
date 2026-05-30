@@ -1,3 +1,4 @@
+import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { extendedStorage } from '../../utils/extendedStorage';
@@ -6,6 +7,7 @@ import { useReminders } from '../../hooks/useReminders';
 import { subscribeToPushNotifications } from '../../services/pushSubscriptionService';
 export function ReminderSettingsPanel() {
   const { permission, requestPermission } = useReminders();
+  const { user } = useAuth();
   const [settings, setSettings] = useState<ReminderSettings>(() => extendedStorage.getReminderSettings());
   const history = extendedStorage.getReminderHistory().slice(0, 10);
 
@@ -32,14 +34,14 @@ export function ReminderSettingsPanel() {
               Notification.permission === 'granted'
             ) {
 
-              let guestId = localStorage.getItem('taskflow-guest-cloud-id');
+              let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
 
-              if (!guestId) {
-                guestId = crypto.randomUUID();
-                localStorage.setItem('taskflow-guest-cloud-id', guestId);
+              if (!pushUserId) {
+                pushUserId = crypto.randomUUID();
+                localStorage.setItem('taskflow-guest-cloud-id', pushUserId);
               }
 
-              await subscribeToPushNotifications(guestId);
+              await subscribeToPushNotifications(pushUserId);
             }
           }}
           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs text-white hover:bg-brand-700"
