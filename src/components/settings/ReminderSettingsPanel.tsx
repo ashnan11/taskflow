@@ -1,15 +1,38 @@
-import { useAuth } from '../../context/AuthContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { extendedStorage } from '../../utils/extendedStorage';
 import type { ReminderSettings } from '../../types/settings';
 import { useReminders } from '../../hooks/useReminders';
 import { subscribeToPushNotifications } from '../../services/pushSubscriptionService';
+
 export function ReminderSettingsPanel() {
   const { permission, requestPermission } = useReminders();
   const { user } = useAuth();
-  const [settings, setSettings] = useState<ReminderSettings>(() => extendedStorage.getReminderSettings());
+
+  const [settings, setSettings] = useState<ReminderSettings>(() =>
+    extendedStorage.getReminderSettings()
+  );
+
   const history = extendedStorage.getReminderHistory().slice(0, 10);
+
+  useEffect(() => {
+    const autoRepairPush = async () => {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
+
+      if (!pushUserId) {
+        pushUserId = crypto.randomUUID();
+        localStorage.setItem('taskflow-guest-cloud-id', pushUserId);
+      }
+
+      await subscribeToPushNotifications(pushUserId);
+    };
+
+    autoRepairPush();
+  }, [user]);
 
   const persist = (next: ReminderSettings) => {
     setSettings(next);
@@ -22,18 +45,15 @@ export function ReminderSettingsPanel() {
 
       <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
         <span className="text-sm">Browser permission: {permission}</span>
+
         <button
           type="button"
           onClick={async () => {
             console.log('ENABLE BUTTON CLICKED');
-            
+
             const result = await requestPermission();
 
-            if (
-              result === 'granted' ||
-              Notification.permission === 'granted'
-            ) {
-
+            if (result === 'granted' || Notification.permission === 'granted') {
               let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
 
               if (!pushUserId) {
@@ -41,7 +61,7 @@ export function ReminderSettingsPanel() {
                 localStorage.setItem('taskflow-guest-cloud-id', pushUserId);
               }
 
-              await subscribeToPushNotifications(pushUserId);
+              await subscribeToPushNotifications(pushUserId, { forceRefresh: true });
             }
           }}
           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs text-white hover:bg-brand-700"
@@ -69,26 +89,35 @@ export function ReminderSettingsPanel() {
         ))}
 
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Default snooze (minutes)</label>
+          <label className="mb-1 block text-xs text-slate-500">
+            Default snooze (minutes)
+          </label>
           <input
             type="number"
             min={1}
             max={120}
             value={settings.defaultSnoozeMinutes}
-            onChange={(e) => persist({ ...settings, defaultSnoozeMinutes: +e.target.value })}
+            onChange={(e) =>
+              persist({ ...settings, defaultSnoozeMinutes: +e.target.value })
+            }
             className="input"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Background check interval (seconds)</label>
+          <label className="mb-1 block text-xs text-slate-500">
+            Background check interval (seconds)
+          </label>
           <input
             type="number"
             min={15}
             max={300}
             value={settings.checkIntervalMs / 1000}
             onChange={(e) =>
-              persist({ ...settings, checkIntervalMs: Math.max(15000, +e.target.value * 1000) })
+              persist({
+                ...settings,
+                checkIntervalMs: Math.max(15000, +e.target.value * 1000),
+              })
             }
             className="input"
           />
@@ -97,7 +126,10 @@ export function ReminderSettingsPanel() {
 
       {history.length > 0 && (
         <div className="mt-6">
-          <h4 className="mb-2 text-sm font-medium text-slate-500">Recent reminder history</h4>
+          <h4 className="mb-2 text-sm font-medium text-slate-500">
+            Recent reminder history
+          </h4>
+
           <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-slate-600 dark:text-slate-400">
             {history.map((h) => (
               <li key={h.id}>

@@ -7,9 +7,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
+
   for (let i = 0; i < rawData.length; i += 1) {
     outputArray[i] = rawData.charCodeAt(i);
   }
+
   return outputArray;
 }
 
@@ -24,6 +26,7 @@ export function isPushSupported(): boolean {
 
 export async function registerServiceWorkerForPush(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
+
   try {
     return await navigator.serviceWorker.ready;
   } catch (error) {
@@ -32,47 +35,21 @@ export async function registerServiceWorkerForPush(): Promise<ServiceWorkerRegis
   }
 }
 
-export async function subscribeToPushNotifications(userId?: string): Promise<PushSubscription | null> {
-  if (!isPushSupported()) return null;
-  if (Notification.permission !== 'granted') return null;
-
+function getVapidPublicKey(): string | null {
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+
   if (!vapidPublicKey) {
-    console.warn('[TaskFlow] Missing VITE_VAPID_PUBLIC_KEY. Closed-app push notifications are not enabled yet.');
+    console.warn('[TaskFlow] Missing VITE_VAPID_PUBLIC_KEY.');
     return null;
   }
 
-  const registration = await registerServiceWorkerForPush();
-  if (!registration) return null;
-
-  try {
-    console.log('Creating push subscription...');
-    const existing = await registration.pushManager.getSubscription();
-
-    if (existing) {
-      await existing.unsubscribe();
-    }
-
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
-    });
-    console.log('Subscription created:', subscription);
-    localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription.toJSON()));
-    console.log('About to save subscription...', subscription);
-
-    await saveSubscription(subscription, userId);
-    return subscription;
-  } catch (error) {
-    console.warn('[TaskFlow] Push subscription failed.', error);
-    return null;
-  }
+  return vapidPublicKey;
 }
 
-async function saveSubscription(subscription: PushSubscription, userId?: string): Promise<void> {
+async function saveSubscription(subscription: PushSubscription, userId?: string): Promise<boolean> {
   if (!userId) {
     console.warn('[TaskFlow] No userId provided for push subscription.');
-    return;
+    return false;
   }
 
   const subscriptionJson = subscription.toJSON();
@@ -92,22 +69,20 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
     });
 
     const result = await response.json();
-    console.log('Push subscription save response:', result);
-    alert(`Push save response: ${JSON.stringify(result)}`);
+    console.log('[TaskFlow] Push subscription API response:', result);
 
     if (!response.ok) {
       throw new Error(result?.error || 'Failed to save push subscription');
     }
   } catch (error) {
     console.warn('[TaskFlow] API subscription save failed. Trying Supabase fallback.', error);
-    alert(`Push save failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   const supabase = getSupabase();
 
   if (!supabase) {
     console.warn('[TaskFlow] Supabase client not available for push subscription fallback.');
-    return;
+    return false;
   }
 
   const { error } = await supabase.from('taskflow_push_subscriptions').upsert(
@@ -123,8 +98,54 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
 
   if (error) {
     console.warn('[TaskFlow] Supabase subscription save failed.', error);
-    return;
+    return false;
   }
 
+  localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscriptionJson));
   console.log('[TaskFlow] Push subscription saved for user:', userId);
+
+  return true;
+}
+
+export async function subscribeToPushNotifications(
+  userId?: string,
+  options: { forceRefresh?: boolean } = {}
+): Promise<PushSubscription | null> {
+  if (!isPushSupported()) {
+    console.warn('[TaskFlow] Push notifications are not supported on this device/browser.');
+    return null;
+  }
+
+  if (Notification.permission !== 'granted') {
+    console.warn('[TaskFlow] Notification permission is not granted.');
+    return null;
+  }
+
+  const vapidPublicKey = getVapidPublicKey();
+  if (!vapidPublicKey) return null;
+
+  const registration = await registerServiceWorkerForPush();
+  if (!registration) return null;
+
+  try {
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (subscription && options.forceRefresh) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
+      });
+    }
+
+    await saveSubscription(subscription, userId);
+    return subscription;
+  } catch (error) {
+    console.warn('[TaskFlow] Push subscription failed.', error);
+    return null;
+  }
 }
