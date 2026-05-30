@@ -26,7 +26,7 @@ export function ReminderSettingsPanel() {
           type="button"
           onClick={async () => {
             console.log('ENABLE BUTTON CLICKED');
-
+            
             const result = await requestPermission();
 
             if (
@@ -34,7 +34,7 @@ export function ReminderSettingsPanel() {
               Notification.permission === 'granted'
             ) {
 
-              let pushUserId = localStorage.getItem('taskflow-guest-cloud-id') ?? user?.id;
+              let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
 
               if (!pushUserId) {
                 pushUserId = crypto.randomUUID();
