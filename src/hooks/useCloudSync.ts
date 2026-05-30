@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { extendedStorage } from '../utils/extendedStorage';
-import { mergeStates, pullCloudState, pushCloudState, subscribeToCloudChanges } from '../services/syncService';
+import { mergeStates, pushCloudState, subscribeToCloudChanges } from '../services/syncService';
 
 export function useCloudSync() {
   const { state, showToast } = useApp();
@@ -24,30 +24,37 @@ export function useCloudSync() {
   }, [user]);
 
   const syncNow = useCallback(async () => {
-    if (!isCloudAvailable || syncingRef.current) return;
+  if (!isCloudAvailable || syncingRef.current) return;
 
-    const cloudUserId = getCloudUserId();
+  const cloudUserId = getCloudUserId();
 
-    syncingRef.current = true;
-    try {
-      const remote = await pullCloudState(cloudUserId);
-      if (remote) {
-        const merged = mergeStates(stateRef.current, remote);
-        window.dispatchEvent(new CustomEvent('taskflow:sync-merge', { detail: merged }));
+  syncingRef.current = true;
+  try {
+    const saved = localStorage.getItem('taskflow-app-state');
+
+    if (saved) {
+      try {
+        stateRef.current = JSON.parse(saved);
+      } catch {
+        // ignore invalid local state
       }
-
-      await pushCloudState(cloudUserId, stateRef.current);
-
-      const syncSettings = extendedStorage.getSyncSettings();
-      extendedStorage.setSyncSettings({ ...syncSettings, lastSyncedAt: new Date().toISOString() });
-
-      showToast('Synced with cloud', 'success');
-    } catch {
-      showToast('Sync failed', 'error');
-    } finally {
-      syncingRef.current = false;
     }
-  }, [isCloudAvailable, getCloudUserId, showToast]);
+
+    await pushCloudState(cloudUserId, stateRef.current);
+
+    const syncSettings = extendedStorage.getSyncSettings();
+    extendedStorage.setSyncSettings({
+      ...syncSettings,
+      lastSyncedAt: new Date().toISOString(),
+    });
+
+    showToast('Synced with cloud', 'success');
+  } catch {
+    showToast('Sync failed', 'error');
+  } finally {
+    syncingRef.current = false;
+  }
+}, [isCloudAvailable, getCloudUserId, showToast]);
 
   useEffect(() => {
     if (!isCloudAvailable) return;
