@@ -70,9 +70,16 @@ export async function subscribeToPushNotifications(userId?: string): Promise<Pus
 }
 
 async function saveSubscription(subscription: PushSubscription, userId?: string): Promise<void> {
+  if (!userId) {
+    console.warn('[TaskFlow] No userId provided for push subscription.');
+    return;
+  }
+
+  const subscriptionJson = subscription.toJSON();
+
   const payload = {
-    userId: userId ?? null,
-    subscription: subscription.toJSON(),
+    userId,
+    subscription: subscriptionJson,
     endpoint: subscription.endpoint,
     userAgent: navigator.userAgent,
   };
@@ -90,29 +97,32 @@ async function saveSubscription(subscription: PushSubscription, userId?: string)
     if (!response.ok) {
       throw new Error(result?.error || 'Failed to save push subscription');
     }
-
-    return;
   } catch (error) {
     console.warn('[TaskFlow] API subscription save failed. Trying Supabase fallback.', error);
-
-    console.error('FULL SAVE ERROR:', error);
   }
 
   const supabase = getSupabase();
-  if (!supabase || !userId) return;
 
-  try {
-    await supabase.from('taskflow_push_subscriptions').upsert(
-      {
-        user_id: userId,
-        endpoint: subscription.endpoint,
-        subscription: subscription.toJSON(),
-        user_agent: navigator.userAgent,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'endpoint' }
-    );
-  } catch (error) {
-    console.warn('[TaskFlow] Supabase subscription save failed.', error);
+  if (!supabase) {
+    console.warn('[TaskFlow] Supabase client not available for push subscription fallback.');
+    return;
   }
+
+  const { error } = await supabase.from('taskflow_push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: subscription.endpoint,
+      subscription: subscriptionJson,
+      user_agent: navigator.userAgent,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'endpoint' }
+  );
+
+  if (error) {
+    console.warn('[TaskFlow] Supabase subscription save failed.', error);
+    return;
+  }
+
+  console.log('[TaskFlow] Push subscription saved for user:', userId);
 }
