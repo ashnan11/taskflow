@@ -73,20 +73,6 @@ export function useCloudSync() {
 
     return () => unsub?.();
   }, [isCloudAvailable, getCloudUserId]);
-
-  useEffect(() => {
-    const handleManualSync = () => {
-      setTimeout(() => {
-        syncNow();
-      }, 500);
-    };
-
-    window.addEventListener('taskflow:manual-sync', handleManualSync);
-
-    return () => {
-      window.removeEventListener('taskflow:manual-sync', handleManualSync);
-    };
-  }, [syncNow]);
-
+  
   return { syncNow, isSyncing: syncingRef.current };
 }
