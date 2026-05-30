@@ -232,16 +232,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateStreak = useCallback(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    if (state.lastActiveDate === today) return;
     const yesterday = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd');
+
+    const dayIdx = (new Date().getDay() + 6) % 7;
+    const weekly = [...state.weeklyCompletions];
+    weekly[dayIdx] = (weekly[dayIdx] ?? 0) + 1;
+
+    if (state.lastActiveDate === today) {
+      dispatch({
+        type: 'SET_STATE',
+        payload: { weeklyCompletions: weekly },
+      });
+      return;
+    }
+
     const streak =
       state.lastActiveDate === yesterday ? state.completionStreak + 1 : state.lastActiveDate ? 1 : 1;
-    const weekly = [...state.weeklyCompletions];
-    const dayIdx = (new Date().getDay() + 6) % 7;
-    weekly[dayIdx] = (weekly[dayIdx] ?? 0) + 1;
+
     dispatch({
       type: 'SET_STATE',
-      payload: { completionStreak: streak, lastActiveDate: today, weeklyCompletions: weekly },
+      payload: {
+        completionStreak: streak,
+        lastActiveDate: today,
+        weeklyCompletions: weekly,
+      },
     });
   }, [state.lastActiveDate, state.completionStreak, state.weeklyCompletions]);
 
