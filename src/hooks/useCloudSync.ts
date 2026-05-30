@@ -36,7 +36,11 @@ export function useCloudSync() {
         window.dispatchEvent(new CustomEvent('taskflow:sync-merge', { detail: merged }));
       }
 
-      await pushCloudState(cloudUserId, stateRef.current);
+      const pushed = await pushCloudState(cloudUserId, stateRef.current);
+
+      if (!pushed) {
+        throw new Error('Cloud push failed');
+      }
 
       const syncSettings = extendedStorage.getSyncSettings();
       extendedStorage.setSyncSettings({ ...syncSettings, lastSyncedAt: new Date().toISOString() });
