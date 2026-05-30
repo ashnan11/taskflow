@@ -73,15 +73,22 @@ export function useCloudSync() {
 
     return () => unsub?.();
   }, [isCloudAvailable, getCloudUserId]);
- useEffect(() => {
-  if (!isCloudAvailable || syncingRef.current) return;
+  useEffect(() => {
+    if (!isCloudAvailable) return;
 
-  const id = setTimeout(() => {
-    syncNow();
-  }, 800);
+    const id = setTimeout(() => {
+      if (syncingRef.current) {
+        setTimeout(() => {
+          syncNow();
+        }, 1500);
+        return;
+      }
 
-  return () => clearTimeout(id);
-}, [state.tasks, state.categories, state.allTags, state.preferences, isCloudAvailable, syncNow]);
+      syncNow();
+    }, 1200);
+
+    return () => clearTimeout(id);
+  }, [state.tasks, state.categories, state.allTags, state.preferences, isCloudAvailable, syncNow]);
 
   return { syncNow, isSyncing: syncingRef.current };
 }
