@@ -261,8 +261,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       partial.tags?.forEach((tag) => dispatch({ type: 'ADD_TAG', payload: tag }));
       showToast('Task created successfully');
 
-      if (task.reminder) {
-        window.dispatchEvent(new Event('taskflow:reminder-task-saved'));
+      const hasReminder = Boolean(task.reminder || (task.dueDate && task.dueTime));
+
+      if (hasReminder) {
+        console.log('REMINDER TASK SAVED EVENT FIRED:', task);
+        window.dispatchEvent(
+          new CustomEvent('taskflow:reminder-task-saved', { detail: task })
+        );
       }
 
       setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
@@ -280,8 +285,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       showToast('Task updated');
 
-      if (task.reminder) {
-        window.dispatchEvent(new Event('taskflow:reminder-task-saved'));
+      const hasReminder = Boolean(task.reminder || (task.dueDate && task.dueTime));
+
+      if (hasReminder) {
+        console.log('REMINDER TASK UPDATED EVENT FIRED:', task);
+        window.dispatchEvent(
+          new CustomEvent('taskflow:reminder-task-saved', { detail: task })
+        );
       }
 
       setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
