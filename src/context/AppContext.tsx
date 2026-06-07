@@ -260,7 +260,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (partial.category) dispatch({ type: 'ADD_CATEGORY', payload: partial.category });
       partial.tags?.forEach((tag) => dispatch({ type: 'ADD_TAG', payload: tag }));
       showToast('Task created successfully');
+
+      if (task.reminder) {
+        window.dispatchEvent(new Event('taskflow:reminder-task-saved'));
+      }
+
       setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
+
       return task;
     },
     [state.preferences.defaultPriority, showToast]
@@ -273,6 +279,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         payload: { ...task, updatedAt: new Date().toISOString() },
       });
       showToast('Task updated');
+
+      if (task.reminder) {
+        window.dispatchEvent(new Event('taskflow:reminder-task-saved'));
+      }
+
       setTimeout(() => window.dispatchEvent(new Event('taskflow:manual-sync')), 500);
     },
     [showToast]

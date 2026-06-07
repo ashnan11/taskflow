@@ -7,17 +7,23 @@ import { getDemoTasks } from './utils/seedData';
 import { extendedStorage } from './utils/extendedStorage';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
 import { useCloudSync } from './hooks/useCloudSync';
+import { useAutoEnablePushOnReminderTask } from './hooks/useAutoEnablePushOnReminderTask';
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { state, addTask } = useApp();
   const seeded = useRef(false);
+
   useCloudSync();
+  useAutoEnablePushOnReminderTask();
 
   useEffect(() => {
     if (seeded.current) return;
+
     const onboarding = extendedStorage.getOnboarding();
     if (onboarding.completed || onboarding.skipped) return;
+
     const saved = loadState();
+
     if (!saved?.tasks?.length && state.tasks.length === 0) {
       seeded.current = true;
       getDemoTasks().forEach((t) => addTask(t));
@@ -26,6 +32,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const a11y = extendedStorage.getAccessibilitySettings();
+
     document.documentElement.classList.toggle('reduce-motion', a11y.reduceMotion);
     document.documentElement.classList.toggle('high-contrast', a11y.highContrast);
     document.documentElement.classList.toggle('large-text', a11y.largeText);
