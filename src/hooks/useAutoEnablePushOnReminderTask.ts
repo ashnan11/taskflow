@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { subscribeToPushNotifications } from '../services/pushSubscriptionService';
 
-const PROMPT_SEEN_KEY = 'taskflow-notification-onboarding-seen';
+const SESSION_SKIP_KEY = 'taskflow-notification-onboarding-skipped-session';
 
 function getOrCreatePushUserId(authUserId?: string): string {
   if (authUserId) return authUserId;
@@ -36,6 +36,7 @@ export function useAutoEnablePushOnReminderTask() {
       console.log('AUTO PUSH USER ID:', pushUserId);
       console.log('CURRENT NOTIFICATION PERMISSION:', Notification.permission);
 
+      // Case 1: Already allowed. Just repair/update push subscription.
       if (Notification.permission === 'granted') {
         const subscription = await subscribeToPushNotifications(pushUserId, {
           forceRefresh: true,
@@ -44,39 +45,44 @@ export function useAutoEnablePushOnReminderTask() {
         if (subscription) {
           showToast('Reminders are ready on this device', 'success');
         } else {
-          showToast('Push setup failed. Please try Enable in Reminder settings.', 'error');
+          showToast('Push setup failed. Try Enable in Reminder settings.', 'error');
         }
 
         return;
       }
 
+      // Case 2: User blocked notifications.
       if (Notification.permission === 'denied') {
         showToast(
-          'Notifications are blocked. Please allow notifications from browser settings.',
+          'Notifications are blocked. Please allow them from browser/site settings.',
           'error'
         );
         return;
       }
 
-      const alreadySeen = localStorage.getItem(PROMPT_SEEN_KEY);
-
-      if (alreadySeen) {
-        showToast('Reminder saved. Please allow notifications to receive alerts.', 'info');
+      // Case 3: Permission is default. Ask politely first.
+      // Do not show repeatedly in the same app session.
+      if (sessionStorage.getItem(SESSION_SKIP_KEY)) {
+        showToast(
+          'Reminder saved. Enable notifications to receive alerts when app is closed.',
+          'info'
+        );
         return;
       }
 
-      localStorage.setItem(PROMPT_SEEN_KEY, 'true');
-
       const wantsReminder = window.confirm(
-        'Enable reminders?\n\nTaskFlow can notify you even when the app is closed.\n\nPress OK to enable notifications.'
+        'Enable reminders?\n\nTaskFlow can notify you even when the app is closed.\n\nPress OK to enable notifications, or Cancel to do it later.'
       );
 
       if (!wantsReminder) {
-        showToast('Reminder saved. Notifications can be enabled later.', 'info');
+        sessionStorage.setItem(SESSION_SKIP_KEY, 'true');
+        showToast('Reminder saved. You can enable notifications later.', 'info');
         return;
       }
 
       const permission = await Notification.requestPermission();
+
+      console.log('NEW NOTIFICATION PERMISSION:', permission);
 
       if (permission === 'granted') {
         const subscription = await subscribeToPushNotifications(pushUserId, {
@@ -86,13 +92,21 @@ export function useAutoEnablePushOnReminderTask() {
         if (subscription) {
           showToast('Notifications enabled for reminders', 'success');
         } else {
-          showToast('Notification permission granted, but push setup failed.', 'error');
+          showToast('Notification allowed, but push setup failed.', 'error');
         }
 
         return;
       }
 
-      showToast('Notifications were not enabled.', 'error');
+      if (permission === 'denied') {
+        showToast(
+          'Notifications were blocked. Allow them from browser/site settings to receive reminders.',
+          'error'
+        );
+        return;
+      }
+
+      showToast('Notifications were not enabled. Reminder is still saved.', 'info');
     };
 
     window.addEventListener('taskflow:reminder-task-saved', handleReminderTaskSaved);

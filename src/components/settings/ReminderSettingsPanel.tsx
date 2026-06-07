@@ -1,14 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 import { extendedStorage } from '../../utils/extendedStorage';
 import type { ReminderSettings } from '../../types/settings';
 import { useReminders } from '../../hooks/useReminders';
 import { subscribeToPushNotifications } from '../../services/pushSubscriptionService';
 
+function getOrCreatePushUserId(authUserId?: string): string {
+  if (authUserId) return authUserId;
+
+  let guestId = localStorage.getItem('taskflow-guest-cloud-id');
+
+  if (!guestId) {
+    guestId = crypto.randomUUID();
+    localStorage.setItem('taskflow-guest-cloud-id', guestId);
+  }
+
+  return guestId;
+}
+
+function getNotificationPermission(): NotificationPermission {
+  if (typeof window === 'undefined') return 'default';
+
+  const notificationApi = (window as unknown as {
+    Notification?: {
+      permission?: NotificationPermission;
+    };
+  }).Notification;
+
+  return notificationApi?.permission ?? 'default';
+}
+
 export function ReminderSettingsPanel() {
   const { permission, requestPermission } = useReminders();
   const { user } = useAuth();
+  const { showToast } = useApp();
 
   const [settings, setSettings] = useState<ReminderSettings>(() =>
     extendedStorage.getReminderSettings()
@@ -19,24 +46,90 @@ export function ReminderSettingsPanel() {
   useEffect(() => {
     const autoRepairPush = async () => {
       if (!('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
+      if (getNotificationPermission() !== 'granted') return;
 
-      let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
-
-      if (!pushUserId) {
-        pushUserId = crypto.randomUUID();
-        localStorage.setItem('taskflow-guest-cloud-id', pushUserId);
-      }
+      const pushUserId = getOrCreatePushUserId(user?.id);
 
       await subscribeToPushNotifications(pushUserId);
     };
 
     autoRepairPush();
-  }, [user]);
+  }, [user?.id]);
 
   const persist = (next: ReminderSettings) => {
     setSettings(next);
     extendedStorage.setReminderSettings(next);
+  };
+
+  const handleEnableNotifications = async () => {
+    console.log('ENABLE BUTTON CLICKED');
+
+    if (!('Notification' in window)) {
+      showToast('Notifications are not supported on this browser', 'error');
+      return;
+    }
+
+    const pushUserId = getOrCreatePushUserId(user?.id);
+
+    if (getNotificationPermission() === 'granted') {
+      const subscription = await subscribeToPushNotifications(pushUserId, {
+        forceRefresh: true,
+      });
+
+      if (subscription) {
+        showToast('Reminders enabled on this device', 'success');
+      } else {
+        showToast('Push setup failed. Please try again.', 'error');
+      }
+
+      return;
+    }
+
+    if (getNotificationPermission() === 'denied') {
+      showToast(
+        'Notifications are blocked. Please allow them from browser/site settings.',
+        'error'
+      );
+      return;
+    }
+
+    const wantsPermission = window.confirm(
+      'Enable notifications?\n\nTaskFlow needs notification permission to remind you even when the app is closed.\n\nPress OK to continue, or Cancel to do it later.'
+    );
+
+    if (!wantsPermission) {
+      showToast('Notifications were not enabled. You can enable them later.', 'info');
+      return;
+    }
+
+    const result = await requestPermission();
+
+    console.log('NOTIFICATION PERMISSION RESULT:', result);
+    console.log('CURRENT NOTIFICATION PERMISSION:', getNotificationPermission());
+
+    if (result === 'granted' || getNotificationPermission() === 'granted') {
+      const subscription = await subscribeToPushNotifications(pushUserId, {
+        forceRefresh: true,
+      });
+
+      if (subscription) {
+        showToast('Reminders enabled on this device', 'success');
+      } else {
+        showToast('Notification allowed, but push setup failed.', 'error');
+      }
+
+      return;
+    }
+
+    if (getNotificationPermission() === 'denied') {
+      showToast(
+        'Notifications were blocked. Allow them from browser/site settings.',
+        'error'
+      );
+      return;
+    }
+
+    showToast('Notifications were not enabled.', 'info');
   };
 
   return (
@@ -48,22 +141,7 @@ export function ReminderSettingsPanel() {
 
         <button
           type="button"
-          onClick={async () => {
-            console.log('ENABLE BUTTON CLICKED');
-
-            const result = await requestPermission();
-
-            if (result === 'granted' || Notification.permission === 'granted') {
-              let pushUserId = user?.id ?? localStorage.getItem('taskflow-guest-cloud-id');
-
-              if (!pushUserId) {
-                pushUserId = crypto.randomUUID();
-                localStorage.setItem('taskflow-guest-cloud-id', pushUserId);
-              }
-
-              await subscribeToPushNotifications(pushUserId, { forceRefresh: true });
-            }
-          }}
+          onClick={handleEnableNotifications}
           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs text-white hover:bg-brand-700"
         >
           <Bell className="h-3 w-3" /> Enable
