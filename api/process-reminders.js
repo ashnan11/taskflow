@@ -120,36 +120,4 @@ export default async function handler(req, res) {
   skipped,
   usersFound: userRows?.length || 0,
   checkedAt: now.toISOString(),
-  debugUsers: await Promise.all(
-    (userRows || []).map(async (row) => {
-      const userId = row.user_id;
-      const tasks = parseTasks(row);
-
-      const { data: subscriptions } = await supabase
-        .from('taskflow_push_subscriptions')
-        .select('endpoint,subscription')
-        .eq('user_id', userId);
-
-      return {
-        userId,
-        taskCount: tasks.length,
-        subscriptionsFound: subscriptions?.length || 0,
-        reminders: tasks.map((task) => ({
-          title: task.title,
-          reminder: task.reminder,
-          isCompleted: task.isCompleted,
-          isArchived: task.isArchived,
-          parsedTime: task.reminder ? new Date(task.reminder).toISOString() : null,
-          diffMs: task.reminder
-            ? Math.abs(now.getTime() - new Date(task.reminder).getTime())
-            : null,
-          dueNow: task.reminder
-            ? ((now.getTime() - new Date(task.reminder).getTime()) /  1000 / 60) >= 0 &&
-              ((now.getTime() - new Date(task.reminder).getTime()) / 1000 / 60) <= 10
-            : false,
-        })),
-      };
-    })
-  ),
-});
-}
+});}
