@@ -1,34 +1,15 @@
-import { useEffect, useRef } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { useEffect } from 'react';
+import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { AppRouter } from './routes/AppRouter';
-import { loadState } from './utils/storage';
-import { getDemoTasks } from './utils/seedData';
 import { extendedStorage } from './utils/extendedStorage';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
 import { useCloudSync } from './hooks/useCloudSync';
 import { useAutoEnablePushOnReminderTask } from './hooks/useAutoEnablePushOnReminderTask';
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { state, addTask } = useApp();
-  const seeded = useRef(false);
-
   useCloudSync();
   useAutoEnablePushOnReminderTask();
-
-  useEffect(() => {
-    if (seeded.current) return;
-
-    const onboarding = extendedStorage.getOnboarding();
-    if (onboarding.completed || onboarding.skipped) return;
-
-    const saved = loadState();
-
-    if (!saved?.tasks?.length && state.tasks.length === 0) {
-      seeded.current = true;
-      getDemoTasks().forEach((t) => addTask(t));
-    }
-  }, [state.tasks.length, addTask]);
 
   useEffect(() => {
     const a11y = extendedStorage.getAccessibilitySettings();
